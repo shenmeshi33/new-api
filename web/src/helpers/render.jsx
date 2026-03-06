@@ -18,13 +18,13 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import i18next from 'i18next';
-import { Modal, Tag, Typography, Avatar } from '@douyinfe/semi-ui';
-import { copy, showSuccess } from './utils';
+import { Modal， 标签， Typography， Avatar } from '@douyinfe/semi-ui';
+import { copy， showSuccess } from './utils';
 import { MOBILE_BREAKPOINT } from '../hooks/common/useIsMobile';
 import { visit } from 'unist-util-visit';
 import * as LobeIcons from '@lobehub/icons';
 import {
-  OpenAI,
+  打开AI,
   Claude,
   Gemini,
   Moonshot,
@@ -60,17 +60,17 @@ import {
 
 import {
   LayoutDashboard,
-  TerminalSquare，
-  MessageSquare，
+  TerminalSquare,
+  MessageSquare,
   Key,
-  BarChart3,
+  BarChart3，
   Image as ImageIcon,
   CheckSquare,
   CreditCard,
   Layers,
   Gift,
   User,
-  Settings,
+  设置,
   CircleUser,
   Package,
   Server,
@@ -83,12 +83,12 @@ import {
   SiBitbucket,
   SiDiscord,
   SiDropbox,
-  SiFacebook,
+  SiFacebook，
   SiGitea,
   SiGithub,
   SiGitlab,
-  SiGoogle,
-  SiKeycloak,
+  SiGoogle，
+  SiKeycloak，
   SiNextcloud,
   SiNotion,
   SiOkta,
@@ -103,7 +103,7 @@ import {
 import { FaLinkedinIn } from 'react-icons/fa';
 
 // 获取侧边栏Lucide图标组件
-export function getLucideIcon(key, selected = false) {
+export function getLucideIcon(key， selected = false) {
   const size = 16;
   const strokeWidth = 2;
   const SELECTED_COLOR = 'var(--semi-color-primary)';
@@ -175,8 +175,8 @@ export const getModelCategories = (() => {
         filter: (model) =>
           model.model_name.toLowerCase().includes('gpt') ||
           model.model_name.toLowerCase().includes('dall-e') ||
-          model.model_name。toLowerCase().includes('whisper') ||
-          model.model_name。toLowerCase().includes('tts-1') ||
+          model.model_name.toLowerCase().includes('whisper') ||
+          model.model_name.toLowerCase().includes('tts-1') ||
           model.model_name.toLowerCase().includes('text-embedding-3') ||
           model.model_name.toLowerCase().includes('text-moderation') ||
           model.model_name.toLowerCase().includes('babbage') ||
@@ -188,7 +188,7 @@ export const getModelCategories = (() => {
           model.model_name.toLowerCase().includes('o4'),
       },
       anthropic: {
-        label: 'Anthropic',
+        label: 'Anthropic'，
         icon: <Claude.Color />,
         filter: (model) => model.model_name.toLowerCase().includes('claude'),
       }，
@@ -198,7 +198,7 @@ export const getModelCategories = (() => {
         filter: (model) =>
           model.model_name.toLowerCase().includes('gemini') ||
           model.model_name.toLowerCase().includes('gemma') ||
-          model.model_name。toLowerCase().includes('learnlm') ||
+          model.model_name.toLowerCase().includes('learnlm') ||
           model.model_name.toLowerCase().startsWith('embedding-') ||
           model.model_name.toLowerCase().includes('text-embedding-004') ||
           model.model_name.toLowerCase().includes('imagen-4') ||
@@ -235,7 +235,7 @@ export const getModelCategories = (() => {
         label: 'MiniMax',
         icon: <Minimax.Color />,
         filter: (model) =>
-          model.model_name。toLowerCase().includes('abab') ||
+          model.model_name.toLowerCase().includes('abab') ||
           model.model_name.toLowerCase().includes('minimax'),
       },
       baidu: {
@@ -264,7 +264,7 @@ export const getModelCategories = (() => {
         filter: (model) =>
           model.model_name.toLowerCase().includes('command') ||
           model.model_name.toLowerCase().includes('c4ai-') ||
-          model.model_name。toLowerCase().includes('embed-'),
+          model.model_name.toLowerCase().includes('embed-'),
       },
       cloudflare: {
         label: 'Cloudflare',
@@ -2226,8 +2226,8 @@ export function renderClaudeLogContent(
 // 已统一至 renderModelPriceSimple，若仍有遗留引用，请改为传入 provider='claude'
 
 /**
- * rehype 插件：将段落等文本节点拆分为逐词 <span>，并添加淡入动画 class。
- * 仅在流式渲染阶段使用，避免已渲染文字重复动画。
+ * rehype 插件：将段落等文本节点拆分为逐词 <span>，并添加淡入动画 class.
+ * 仅在流式渲染阶段使用，避免已渲染文字重复动画.
  */
 export function rehypeSplitWordsIntoSpans(options = {}) {
   const { previousContentLength = 0 } = options;
