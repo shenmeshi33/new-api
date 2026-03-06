@@ -89,7 +89,6 @@ import {
   SiGitlab,
   SiGoogle,
   SiKeycloak,
-  SiLinkedin,
   SiNextcloud,
   SiNotion,
   SiOkta,
@@ -101,6 +100,7 @@ import {
   SiWechat,
   SiX,
 } from 'react-icons/si';
+import { FaLinkedinIn } from 'react-icons/fa';
 
 // 获取侧边栏Lucide图标组件
 export function getLucideIcon(key, selected = false) {
@@ -179,7 +179,7 @@ export const getModelCategories = (() => {
           model.model_name.toLowerCase().includes('tts-1') ||
           model.model_name.toLowerCase().includes('text-embedding-3') ||
           model.model_name.toLowerCase().includes('text-moderation') ||
-          model.model_name.toLowerCase().includes('babbage') ||
+          model.model_name。toLowerCase().includes('babbage') ||
           model.model_name.toLowerCase().includes('davinci') ||
           model.model_name.toLowerCase().includes('curie') ||
           model.model_name.toLowerCase().includes('ada') ||
@@ -191,14 +191,14 @@ export const getModelCategories = (() => {
         label: 'Anthropic',
         icon: <Claude.Color />,
         filter: (model) => model.model_name.toLowerCase().includes('claude'),
-      },
+      }，
       gemini: {
         label: 'Gemini',
         icon: <Gemini.Color />,
         filter: (model) =>
           model.model_name.toLowerCase().includes('gemini') ||
           model.model_name.toLowerCase().includes('gemma') ||
-          model.model_name.toLowerCase().includes('learnlm') ||
+          model.model_name。toLowerCase().includes('learnlm') ||
           model.model_name.toLowerCase().startsWith('embedding-') ||
           model.model_name.toLowerCase().includes('text-embedding-004') ||
           model.model_name.toLowerCase().includes('imagen-4') ||
@@ -235,7 +235,7 @@ export const getModelCategories = (() => {
         label: 'MiniMax',
         icon: <Minimax.Color />,
         filter: (model) =>
-          model.model_name.toLowerCase().includes('abab') ||
+          model.model_name。toLowerCase().includes('abab') ||
           model.model_name.toLowerCase().includes('minimax'),
       },
       baidu: {
@@ -264,7 +264,7 @@ export const getModelCategories = (() => {
         filter: (model) =>
           model.model_name.toLowerCase().includes('command') ||
           model.model_name.toLowerCase().includes('c4ai-') ||
-          model.model_name.toLowerCase().includes('embed-'),
+          model.model_name。toLowerCase().includes('embed-'),
       },
       cloudflare: {
         label: 'Cloudflare',
@@ -504,7 +504,7 @@ const oauthProviderIconMap = {
   google: SiGoogle,
   discord: SiDiscord,
   facebook: SiFacebook,
-  linkedin: SiLinkedin,
+  linkedin: FaLinkedinIn,
   x: SiX,
   twitter: SiX,
   slack: SiSlack,
