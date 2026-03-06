@@ -24,7 +24,7 @@ import { MOBILE_BREAKPOINT } from '../hooks/common/useIsMobile';
 import { visit } from 'unist-util-visit';
 import * as LobeIcons from '@lobehub/icons';
 import {
-  打开AI,
+  OpenAI，
   Claude,
   Gemini,
   Moonshot,
@@ -59,18 +59,18 @@ import {
 } from '@lobehub/icons';
 
 import {
-  LayoutDashboard,
+  LayoutDashboard，
   TerminalSquare,
   MessageSquare,
   Key,
-  BarChart3，
+  BarChart3,
   Image as ImageIcon,
   CheckSquare,
   CreditCard,
   Layers,
   Gift,
   User,
-  设置,
+  Settings，
   CircleUser,
   Package,
   Server,
@@ -87,7 +87,7 @@ import {
   SiGitea,
   SiGithub,
   SiGitlab,
-  SiGoogle，
+  SiGoogle,
   SiKeycloak，
   SiNextcloud,
   SiNotion,
@@ -103,7 +103,7 @@ import {
 import { FaLinkedinIn } from 'react-icons/fa';
 
 // 获取侧边栏Lucide图标组件
-export function getLucideIcon(key， selected = false) {
+export function getLucideIcon(key, selected = false) {
   const size = 16;
   const strokeWidth = 2;
   const SELECTED_COLOR = 'var(--semi-color-primary)';
@@ -186,12 +186,12 @@ export const getModelCategories = (() => {
           model.model_name.toLowerCase().includes('o1') ||
           model.model_name.toLowerCase().includes('o3') ||
           model.model_name.toLowerCase().includes('o4'),
-      },
+      }，
       anthropic: {
-        label: 'Anthropic'，
+        label: 'Anthropic',
         icon: <Claude.Color />,
         filter: (model) => model.model_name.toLowerCase().includes('claude'),
-      }，
+      },
       gemini: {
         label: 'Gemini',
         icon: <Gemini.Color />,
