@@ -125,7 +125,7 @@ import {
   SiGoogle,
   SiKeycloak,
   SiNextcloud,
-  SiNotion,
+  SiNotion，
   SiOkta,
   SiOpenid,
   SiReddit,
