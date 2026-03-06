@@ -57,9 +57,44 @@ import {
   Perplexity,
   Replicate,
 } from '@lobehub/icons';
+import * as LobeIcons from '@lobehub/icons';
+import {
+  OpenAI,
+  Claude，
+  Gemini,
+  Moonshot,
+  Zhipu,
+  Qwen,
+  DeepSeek,
+  Minimax,
+  Wenxin,
+  Spark,
+  Midjourney,
+  Hunyuan,
+  Cohere,
+  Cloudflare,
+  Ai360,
+  Yi,
+  Jina,
+  Mistral,
+  XAI,
+  Ollama,
+  Doubao,
+  Suno,
+  Xinference,
+  OpenRouter,
+  Dify,
+  Coze,
+  SiliconCloud,
+  FastGPT,
+  Kling,
+  Jimeng,
+  Perplexity,
+  Replicate,
+} from '@lobehub/icons';
 
 import {
-  LayoutDashboard，
+  LayoutDashboard,
   TerminalSquare,
   MessageSquare,
   Key,
@@ -70,7 +105,7 @@ import {
   Layers,
   Gift,
   User,
-  Settings，
+  Settings,
   CircleUser,
   Package,
   Server,
@@ -78,17 +113,17 @@ import {
 } from 'lucide-react';
 import {
   SiAtlassian,
-  SiAuth0，
+  SiAuth0,
   SiAuthentik,
   SiBitbucket,
   SiDiscord,
   SiDropbox,
-  SiFacebook，
+  SiFacebook,
   SiGitea,
   SiGithub,
   SiGitlab,
   SiGoogle,
-  SiKeycloak，
+  SiKeycloak,
   SiNextcloud,
   SiNotion,
   SiOkta,
@@ -101,6 +136,7 @@ import {
   SiX,
 } from 'react-icons/si';
 import { FaLinkedinIn } from 'react-icons/fa';
+
 
 // 获取侧边栏Lucide图标组件
 export function getLucideIcon(key, selected = false) {
