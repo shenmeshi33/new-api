@@ -69,7 +69,7 @@ import {
   CreditCard,
   Layers,
   Gift,
-  User,
+  User，
   Settings,
   CircleUser,
   Package,
@@ -175,11 +175,11 @@ export const getModelCategories = (() => {
         filter: (model) =>
           model.model_name.toLowerCase().includes('gpt') ||
           model.model_name.toLowerCase().includes('dall-e') ||
-          model.model_name.toLowerCase().includes('whisper') ||
-          model.model_name.toLowerCase().includes('tts-1') ||
+          model.model_name。toLowerCase().includes('whisper') ||
+          model.model_name。toLowerCase().includes('tts-1') ||
           model.model_name.toLowerCase().includes('text-embedding-3') ||
           model.model_name.toLowerCase().includes('text-moderation') ||
-          model.model_name。toLowerCase().includes('babbage') ||
+          model.model_name.toLowerCase().includes('babbage') ||
           model.model_name.toLowerCase().includes('davinci') ||
           model.model_name.toLowerCase().includes('curie') ||
           model.model_name.toLowerCase().includes('ada') ||
