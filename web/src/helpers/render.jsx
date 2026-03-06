@@ -24,43 +24,8 @@ import { MOBILE_BREAKPOINT } from '../hooks/common/useIsMobile';
 import { visit } from 'unist-util-visit';
 import * as LobeIcons from '@lobehub/icons';
 import {
-  OpenAI，
-  Claude,
-  Gemini,
-  Moonshot,
-  Zhipu,
-  Qwen,
-  DeepSeek,
-  Minimax,
-  Wenxin,
-  Spark,
-  Midjourney,
-  Hunyuan,
-  Cohere,
-  Cloudflare,
-  Ai360,
-  Yi,
-  Jina,
-  Mistral,
-  XAI,
-  Ollama,
-  Doubao,
-  Suno,
-  Xinference,
-  OpenRouter,
-  Dify,
-  Coze,
-  SiliconCloud,
-  FastGPT,
-  Kling,
-  Jimeng,
-  Perplexity,
-  Replicate,
-} from '@lobehub/icons';
-import * as LobeIcons from '@lobehub/icons';
-import {
   OpenAI,
-  Claude，
+  Claude,
   Gemini,
   Moonshot,
   Zhipu,
@@ -200,7 +165,7 @@ export const getModelCategories = (() => {
     }
 
     categoriesCache = {
-      all: {
+      全部: {
         label: t('全部模型'),
         icon: null,
         filter: () => true,
@@ -218,13 +183,13 @@ export const getModelCategories = (() => {
           model.model_name.toLowerCase().includes('babbage') ||
           model.model_name.toLowerCase().includes('davinci') ||
           model.model_name.toLowerCase().includes('curie') ||
-          model.model_name.toLowerCase().includes('ada') ||
+          model.model_name。toLowerCase().includes('ada') ||
           model.model_name.toLowerCase().includes('o1') ||
           model.model_name.toLowerCase().includes('o3') ||
           model.model_name.toLowerCase().includes('o4'),
-      }，
+      },
       anthropic: {
-        label: 'Anthropic',
+        label: 'Anthropic'，
         icon: <Claude.Color />,
         filter: (model) => model.model_name.toLowerCase().includes('claude'),
       },
@@ -242,7 +207,7 @@ export const getModelCategories = (() => {
           model.model_name.toLowerCase().includes('aqa'),
       },
       moonshot: {
-        label: 'Moonshot',
+        label: 'Moonshot'，
         icon: <Moonshot />,
         filter: (model) =>
           model.model_name.toLowerCase().includes('moonshot') ||
@@ -301,7 +266,7 @@ export const getModelCategories = (() => {
           model.model_name.toLowerCase().includes('command') ||
           model.model_name.toLowerCase().includes('c4ai-') ||
           model.model_name.toLowerCase().includes('embed-'),
-      },
+      }，
       cloudflare: {
         label: 'Cloudflare',
         icon: <Cloudflare.Color />,
