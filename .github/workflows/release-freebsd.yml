@@ -1,14 +1,14 @@
 name: release-freebsd
 
-于:
+on:
   workflow_dispatch:
     inputs:
       tag:
         description: "Optional tag to release (e.g. v0.11.2-freebsd.1)"
         required: false
-        输入: string
+        type: string
   push:
-    标签:
+    tags:
       - "v*"
 
 permissions:
