@@ -1,0 +1,160 @@
+name: release-freebsd
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "可选：发布用 tag（例如 v1.2.3）。留空则只产出 artifact，不发 Release"
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  GOOS: freebsd
+  GOARCH: amd64
+  CGO_ENABLED: "0"
+  FAIL_ON_FRONTEND_BUILD: "true"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.x"
+
+      - name: Detect frontend/embed requirement
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          has_web="false"
+          has_pkg="false"
+          need_frontend="false"
+
+          if [ -d web ]; then
+            has_web="true"
+          fi
+
+          if [ -f web/package.json ]; then
+            has_pkg="true"
+          fi
+
+          # 检测是否可能依赖嵌入式前端资源（go:embed web/dist 或 web/build 等）
+          if git grep -nE 'go:embed .*web/(dist|build)|go:embed .*web' -- '*.go' >/dev/null 2>&1; then
+            need_frontend="true"
+          fi
+
+          # 如果有 web/package.json，通常也需要前端产物
+          if [ "$has_pkg" = "true" ]; then
+            need_frontend="true"
+          fi
+
+          echo "has_web=$has_web" >> "$GITHUB_OUTPUT"
+          echo "has_pkg=$has_pkg" >> "$GITHUB_OUTPUT"
+          echo "need_frontend=$need_frontend" >> "$GITHUB_OUTPUT"
+
+          echo "Detected: has_web=$has_web, has_pkg=$has_pkg, need_frontend=$need_frontend"
+
+      - name: Setup Node (only when frontend is needed)
+        if: steps.detect.outputs.need_frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build frontend (strict mode, must succeed)
+        if: steps.detect.outputs.need_frontend == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # 如果已有 dist 且非空，直接复用
+          if [ -d web/dist ] && [ -n "$(ls -A web/dist 2>/dev/null)" ]; then
+            echo "web/dist already exists, skip frontend build."
+          else
+            cd web
+            if [ -f package-lock.json ]; then
+              npm ci --legacy-peer-deps
+            else
+              npm install --legacy-peer-deps
+            fi
+            npm run build
+            cd ..
+          fi
+
+          # 严格校验：必须有可用前端产物
+          if [ ! -d web/dist ] || [ -z "$(ls -A web/dist 2>/dev/null)" ]; then
+            echo "::error::Frontend build required but web/dist is missing or empty."
+            exit 1
+          fi
+
+      - name: Build Go binary (freebsd/amd64)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+
+          echo "Trying: go build ."
+          if go build -trimpath -ldflags="-s -w" -o dist/new-api_freebsd_amd64 .; then
+            echo "Built from project root."
+          else
+            echo "Root build failed, trying ./cmd/new-api ..."
+            go build -trimpath -ldflags="-s -w" -o dist/new-api_freebsd_amd64 ./cmd/new-api
+            echo "Built from ./cmd/new-api."
+          fi
+
+          test -f dist/new-api_freebsd_amd64
+          file dist/new-api_freebsd_amd64 || true
+
+      - name: Package tar.gz + sha256
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          tar -czf new-api_freebsd_amd64.tar.gz new-api_freebsd_amd64
+          sha256sum new-api_freebsd_amd64.tar.gz > new-api_freebsd_amd64.tar.gz.sha256
+          ls -lh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: new-api_freebsd_amd64
+          path: |
+            dist/new-api_freebsd_amd64.tar.gz
+            dist/new-api_freebsd_amd64.tar.gz.sha256
+
+      - name: Resolve release tag
+        id: rel
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag=""
+
+          if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
+            tag="${GITHUB_REF#refs/tags/}"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.release_tag }}" ]]; then
+            tag="${{ github.event.inputs.release_tag }}"
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Resolved tag: $tag"
+
+      - name: Publish GitHub Release (optional)
+        if: steps.rel.outputs.tag != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.rel.outputs.tag }}
+          文件: |
+            dist/new-api_freebsd_amd64.tar.gz
+            dist/new-api_freebsd_amd64.tar.gz.sha256
