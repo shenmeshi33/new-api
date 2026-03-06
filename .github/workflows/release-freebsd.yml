@@ -39,13 +39,13 @@ jobs:
         id: embed
         shell: bash
         run: |
-          # 粗略检测：若代码里出现 go:embed / web/dist 相关引用，则认为需要前端产物
+          # 检测是否需要 web/dist（粗略但实用）
           if grep -R --line-number --include='*.go' -E '//go:embed|web/dist|embed\.FS|embed\.' . >/dev/null 2>&1; then
             echo "required=true" >> "$GITHUB_OUTPUT"
           else
             echo "required=false" >> "$GITHUB_OUTPUT"
           fi
-          echo "embed required = $(cat "$GITHUB_OUTPUT" | sed -n 's/^required=//p')"
+          echo "embed required = $(sed -n 's/^required=//p' "$GITHUB_OUTPUT")"
 
       - name: Check frontend project
         id: frontend
@@ -56,24 +56,33 @@ jobs:
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
-          echo "frontend exists = $(cat "$GITHUB_OUTPUT" | sed -n 's/^exists=//p')"
+          echo "frontend exists = $(sed -n 's/^exists=//p' "$GITHUB_OUTPUT")"
 
-      - name: Setup Node (if frontend exists)
-        if: steps.frontend.outputs.exists == 'true'
+      - name: Setup Node (if frontend exists and embed required)
+        if: steps.frontend.outputs.exists == 'true' && steps.embed.outputs.required == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Build frontend (if needed)
-        if: steps.frontend.outputs.exists == 'true'
+        if: steps.frontend.outputs.exists == 'true' && steps.embed.outputs.required == 'true'
         shell: bash
         run: |
           set -e
-          if [ -f web/package-lock.json ]; then
-            npm ci --prefix web
-          else
-            npm install --prefix web
+
+          # 仓库里已有 web/dist 就跳过构建，避免不必要的 npm 依赖冲突
+          if [ -d web/dist ] && [ "$(find web/dist -mindepth 1 -maxdepth 1 | wc -l)" -gt 0 ]; then
+            echo "web/dist already exists, skip frontend build."
+            exit 0
           fi
+
+          # 兼容你当前依赖树冲突（React peer deps）
+          if [ -f web/package-lock.json ]; then
+            npm ci --prefix web --legacy-peer-deps
+          else
+            npm install --prefix web --legacy-peer-deps
+          fi
+
           npm run build --prefix web
 
       - name: Ensure web/dist exists (if embed required)
@@ -91,7 +100,7 @@ jobs:
           set -e
           mkdir -p dist
 
-          # 优先尝试根目录构建；失败再尝试 cmd/new-api
+          # 先尝试根目录，再尝试 cmd/new-api
           if go build -trimpath -ldflags "-s -w" -o dist/new-api .; then
             echo "Built from module root."
           else
@@ -99,8 +108,8 @@ jobs:
             go build -trimpath -ldflags "-s -w" -o dist/new-api ./cmd/new-api
           fi
 
-          file dist/new-api || true
           ls -lah dist/new-api
+          file dist/new-api || true
 
       - name: Pack tar.gz + sha256
         id: pack
@@ -132,7 +141,7 @@ jobs:
           else
             echo "value=" >> "$GITHUB_OUTPUT"
           fi
-          echo "release tag = $(cat "$GITHUB_OUTPUT" | sed -n 's/^value=//p')"
+          echo "release tag = $(sed -n 's/^value=//p' "$GITHUB_OUTPUT")"
 
       - name: Create tag on manual run (if provided and missing)
         if: github.event_name == 'workflow_dispatch' && steps.tag.outputs.value != ''
