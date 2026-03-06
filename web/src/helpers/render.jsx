@@ -18,8 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import i18next from 'i18next';
-import { Modal， 标签， Typography， Avatar } from '@douyinfe/semi-ui';
-import { copy， showSuccess } from './utils';
+import { Modal, Tag, Typography, Avatar } from '@douyinfe/semi-ui';
+import { copy, showSuccess } from './utils';
 import { MOBILE_BREAKPOINT } from '../hooks/common/useIsMobile';
 import { visit } from 'unist-util-visit';
 import * as LobeIcons from '@lobehub/icons';
