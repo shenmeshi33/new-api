@@ -90,7 +90,7 @@ import {
   SiGoogle,
   SiKeycloak,
   SiNextcloud,
-  SiNotion，
+  SiNotion,
   SiOkta,
   SiOpenid,
   SiReddit,
@@ -110,7 +110,7 @@ export function getLucideIcon(key, selected = false) {
   const SELECTED_COLOR = 'var(--semi-color-primary)';
   const iconColor = selected ? SELECTED_COLOR : 'currentColor';
   const commonProps = {
-    size，
+    size,
     strokeWidth,
     className: `transition-colors duration-200 ${selected ? 'transition-transform duration-200 scale-105' : ''}`,
   };
@@ -189,7 +189,7 @@ export const getModelCategories = (() => {
           model.model_name.toLowerCase().includes('o4'),
       },
       anthropic: {
-        label: 'Anthropic'，
+        label: 'Anthropic',
         icon: <Claude.Color />,
         filter: (model) => model.model_name.toLowerCase().includes('claude'),
       },
@@ -207,7 +207,7 @@ export const getModelCategories = (() => {
           model.model_name.toLowerCase().includes('aqa'),
       },
       moonshot: {
-        label: 'Moonshot'，
+        label: 'Moonshot',
         icon: <Moonshot />,
         filter: (model) =>
           model.model_name.toLowerCase().includes('moonshot') ||
@@ -266,7 +266,7 @@ export const getModelCategories = (() => {
           model.model_name.toLowerCase().includes('command') ||
           model.model_name.toLowerCase().includes('c4ai-') ||
           model.model_name.toLowerCase().includes('embed-'),
-      }，
+      },
       cloudflare: {
         label: 'Cloudflare',
         icon: <Cloudflare.Color />,
