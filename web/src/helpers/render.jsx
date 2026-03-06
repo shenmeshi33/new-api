@@ -60,8 +60,8 @@ import {
 
 import {
   LayoutDashboard,
-  TerminalSquare,
-  MessageSquare,
+  TerminalSquare，
+  MessageSquare，
   Key,
   BarChart3,
   Image as ImageIcon,
@@ -69,7 +69,7 @@ import {
   CreditCard,
   Layers,
   Gift,
-  User，
+  User,
   Settings,
   CircleUser,
   Package,
@@ -78,7 +78,7 @@ import {
 } from 'lucide-react';
 import {
   SiAtlassian,
-  SiAuth0,
+  SiAuth0，
   SiAuthentik,
   SiBitbucket,
   SiDiscord,
@@ -109,7 +109,7 @@ export function getLucideIcon(key, selected = false) {
   const SELECTED_COLOR = 'var(--semi-color-primary)';
   const iconColor = selected ? SELECTED_COLOR : 'currentColor';
   const commonProps = {
-    size,
+    size，
     strokeWidth,
     className: `transition-colors duration-200 ${selected ? 'transition-transform duration-200 scale-105' : ''}`,
   };
