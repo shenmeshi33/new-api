@@ -3,8 +3,12 @@ name: ci
 on:
   push:
     branches: [main, alpha]
+    paths-ignore:
+      - '.github/workflows/**'
   pull_request:
     branches: [main, alpha]
+    paths-ignore:
+      - '.github/workflows/**'
   workflow_dispatch:
     inputs:
       run_mode:
