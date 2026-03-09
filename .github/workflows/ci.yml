@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [main, alpha]
+  pull_request:
+    branches: [main, alpha]
+  workflow_dispatch:
+    inputs:
+      run_mode:
+        description: 'Run mode'
+        required: true
+        default: 'changed-only'
+        type: choice
+        options:
+          - changed-only
+          - full
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      go: ${{ steps.filter.outputs.go }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Path filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            web:
+              - 'web/**'
+              - '.github/workflows/ci.yml'
+            go:
+              - '**/*.go'
+              - 'go.mod'
+              - 'go.sum'
+              - '.github/workflows/ci.yml'
+
+  web-build:
+    name: Web build (Node 20)
+    needs: changes
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.run_mode == 'full') || needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install deps
+        run: npm ci --legacy-peer-deps
+
+      - name: Build web
+        run: npm run build
+
+  go-build:
+    name: Go test + build
+    needs: changes
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.run_mode == 'full') || needs.changes.outputs.go == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go (from go.mod)
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Go test
+        run: go test ./...
+
+      - name: Go build
+        run: go build -v ./...
+
+  freebsd-smoke:
+    name: FreeBSD smoke build (amd64)
+    needs: changes
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.run_mode == 'full') || needs.changes.outputs.go == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go (from go.mod)
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Cross build for FreeBSD
+        env:
+          GOOS: freebsd
+          GOARCH: amd64
+          CGO_ENABLED: 0
+        run: |
+          go build -v -o /tmp/new-api-freebsd-amd64 ./
+          ls -lh /tmp/new-api-freebsd-amd64
