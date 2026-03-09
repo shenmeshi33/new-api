@@ -4,12 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "可选：发布用 tag（例如 v1.2.3）。留空则只产出 artifact，不发 Release"
+        description: "可选：发布用 tag（例如 v1.2.3-freebsd.1）。留空则只产出 artifact，不发 Release"
         required: false
         type: string
   push:
     tags:
-      - "v*"
+      - "v*-freebsd*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -18,7 +22,6 @@ env:
   GOOS: freebsd
   GOARCH: amd64
   CGO_ENABLED: "0"
-  FAIL_ON_FRONTEND_BUILD: "true"
 
 jobs:
   build:
@@ -33,7 +36,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23.x"
+          go-version-file: go.mod
 
       - name: Determine Version
         id: ver
@@ -51,7 +54,7 @@ jobs:
             version="${{ github.event.inputs.release_tag }}"
           fi
 
-          # 3) 兜底：尽量从 git 获取可读版本
+          # 3) 兜底：从 git 获取可读版本
           if [[ -z "$version" ]]; then
             version="$(git describe --tags --always 2>/dev/null || true)"
           fi
@@ -75,21 +78,16 @@ jobs:
           has_pkg="false"
           need_frontend="false"
 
-          if [ -d web ]; then
-            has_web="true"
-          fi
+          [[ -d web ]] && has_web="true"
+          [[ -f web/package.json ]] && has_pkg="true"
 
-          if [ -f web/package.json ]; then
-            has_pkg="true"
-          fi
-
-          # 检测是否可能依赖嵌入式前端资源（go:embed web/dist 或 web/build 等）
+          # 代码里显式 embed web/dist 或 web/build
           if git grep -nE 'go:embed .*web/(dist|build)|go:embed .*web' -- '*.go' >/dev/null 2>&1; then
             need_frontend="true"
           fi
 
-          # 如果有 web/package.json，通常也需要前端产物
-          if [ "$has_pkg" = "true" ]; then
+          # 只要有前端工程，默认也构建，避免漏掉隐式依赖
+          if [[ "$has_pkg" == "true" ]]; then
             need_frontend="true"
           fi
 
@@ -99,37 +97,39 @@ jobs:
 
           echo "Detected: has_web=$has_web, has_pkg=$has_pkg, need_frontend=$need_frontend"
 
-      - name: Setup Node (only when frontend is needed)
+      - name: Setup Node (when frontend is needed)
         if: steps.detect.outputs.need_frontend == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
 
-      - name: Build frontend (strict mode, must succeed)
+      - name: Build frontend (required for embed)
         if: steps.detect.outputs.need_frontend == 'true'
+        working-directory: web
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
         shell: bash
         run: |
           set -euo pipefail
 
-          # 如果已有 dist 且非空，直接复用
-          if [ -d web/dist ] && [ -n "$(ls -A web/dist 2>/dev/null)" ]; then
-            echo "web/dist already exists, skip frontend build."
+          if [[ -f package-lock.json ]]; then
+            npm ci --legacy-peer-deps
           else
-            cd web
-            if [ -f package-lock.json ]; then
-              npm ci --legacy-peer-deps
-            else
-              npm install --legacy-peer-deps
-            fi
-            npm run build
-            cd ..
+            npm install --legacy-peer-deps
           fi
 
-          # 严格校验：必须有可用前端产物
-          if [ ! -d web/dist ] || [ -z "$(ls -A web/dist 2>/dev/null)" ]; then
-            echo "::error::Frontend build required but web/dist is missing or empty."
-            exit 1
-          fi
+          npm run build
+
+      - name: Verify web/dist exists
+        if: steps.detect.outputs.need_frontend == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d web/dist
+          test -n "$(ls -A web/dist 2>/dev/null)"
+          ls -la web/dist | head -n 50
 
       - name: Build Go binary (freebsd/amd64)
         shell: bash
@@ -138,12 +138,14 @@ jobs:
           mkdir -p dist
 
           echo "Using version: ${VERSION}"
+          LDFLAGS="-s -w -X 'new-api/common.Version=${VERSION}'"
+
           echo "Trying: go build ."
-          if go build -trimpath -ldflags="-s -w -X 'new-api/common.Version=${VERSION}'" -o dist/new-api_freebsd_amd64 .; then
+          if go build -trimpath -ldflags="${LDFLAGS}" -o dist/new-api_freebsd_amd64 .; then
             echo "Built from project root."
           else
             echo "Root build failed, trying ./cmd/new-api ..."
-            go build -trimpath -ldflags="-s -w -X 'new-api/common.Version=${VERSION}'" -o dist/new-api_freebsd_amd64 ./cmd/new-api
+            go build -trimpath -ldflags="${LDFLAGS}" -o dist/new-api_freebsd_amd64 ./cmd/new-api
             echo "Built from ./cmd/new-api."
           fi
 
