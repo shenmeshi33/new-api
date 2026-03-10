@@ -138,7 +138,7 @@ jobs:
           mkdir -p dist
 
           echo "Using version: ${VERSION}"
-          LDFLAGS="-s -w -X 'new-api/common.Version=${VERSION}'"
+          LDFLAGS="-s -w -X 'github.com/QuantumNous/new-api/common.Version=${VERSION}'"
 
           echo "Trying: go build ."
           if go build -trimpath -ldflags="${LDFLAGS}" -o dist/new-api_freebsd_amd64 .; then
