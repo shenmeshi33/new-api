@@ -90,7 +90,6 @@ import {
   SiGitlab,
   SiGoogle,
   SiKeycloak,
-  FaLinkedinIn,
   SiNextcloud,
   SiNotion,
   SiOkta,
