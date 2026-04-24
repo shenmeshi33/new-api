@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -378,13 +379,33 @@ func RequestOpenAI2ClaudeMessage(c *gin.Context, textRequest dto.GeneralOpenAIRe
 							})
 						}
 					case dto.ContentTypeFile:
-						source := mediaMessage.ToFileSource()
-						if source == nil {
+						file := mediaMessage.GetFile()
+						if file == nil || file.FileData == "" {
 							continue
 						}
-						base64Data, mimeType, err := service.GetBase64Data(c, source, "formatting file for Claude")
-						if err != nil {
-							return nil, fmt.Errorf("get file data failed: %s", err.Error())
+
+						rawData := file.FileData
+						mimeType := ""
+						if strings.HasPrefix(rawData, "data:") {
+							source := mediaMessage.ToFileSource()
+							if source == nil {
+								continue
+							}
+							base64Data, detectedMimeType, err := service.GetBase64Data(c, source, "formatting file for Claude")
+							if err != nil {
+								return nil, fmt.Errorf("get file data failed: %s", err.Error())
+							}
+							rawData = base64Data
+							mimeType = detectedMimeType
+						} else {
+							ext := strings.TrimPrefix(strings.ToLower(filepath.Ext(file.FileName)), ".")
+							if ext != "" {
+								mimeType = service.GetMimeTypeByExtension(ext)
+							}
+						}
+
+						if mimeType == "" || mimeType == "application/octet-stream" {
+							continue
 						}
 
 						switch {
@@ -394,7 +415,7 @@ func RequestOpenAI2ClaudeMessage(c *gin.Context, textRequest dto.GeneralOpenAIRe
 								Source: &dto.ClaudeMessageSource{
 									Type:      "base64",
 									MediaType: mimeType,
-									Data:      base64Data,
+									Data:      rawData,
 								},
 							})
 						case mimeType == "application/pdf":
@@ -403,11 +424,11 @@ func RequestOpenAI2ClaudeMessage(c *gin.Context, textRequest dto.GeneralOpenAIRe
 								Source: &dto.ClaudeMessageSource{
 									Type:      "base64",
 									MediaType: mimeType,
-									Data:      base64Data,
+									Data:      rawData,
 								},
 							})
 						case strings.HasPrefix(mimeType, "text/") || mimeType == "application/json":
-							decodedText, decodeErr := base64.StdEncoding.DecodeString(base64Data)
+							decodedText, decodeErr := base64.StdEncoding.DecodeString(rawData)
 							if decodeErr != nil {
 								return nil, fmt.Errorf("decode text file data failed: %s", decodeErr.Error())
 							}
