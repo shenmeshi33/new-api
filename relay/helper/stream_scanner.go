@@ -3,6 +3,7 @@ package helper
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,6 +35,18 @@ func getScannerBufferSize() int {
 	return DefaultMaxScannerBufferSize
 }
 
+func isExpectedStreamScannerError(err error) bool {
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrClosedPipe) {
+		return true
+	}
+
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "closed pipe") || strings.Contains(msg, "use of closed network connection")
+}
+
 func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo, dataHandler func(data string, sr *StreamResult)) {
 
 	if resp == nil || dataHandler == nil {
@@ -52,16 +65,27 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 		}
 	}()
 
-	streamingTimeout := time.Duration(constant.StreamingTimeout) * time.Second
+	streamingTimeoutSeconds := constant.StreamingTimeout
+	if streamingTimeoutSeconds <= 0 {
+		streamingTimeoutSeconds = 300
+	}
+	streamingTimeout := time.Duration(streamingTimeoutSeconds) * time.Second
 
 	var (
-		stopChan   = make(chan bool, 3) // 增加缓冲区避免阻塞
+		stopChan   = make(chan bool)
+		stopOnce   sync.Once
 		scanner    = bufio.NewScanner(resp.Body)
 		ticker     = time.NewTicker(streamingTimeout)
 		pingTicker *time.Ticker
 		writeMutex sync.Mutex     // Mutex to protect concurrent writes
 		wg         sync.WaitGroup // 用于等待所有 goroutine 退出
 	)
+
+	signalStop := func() {
+		stopOnce.Do(func() {
+			close(stopChan)
+		})
+	}
 
 	generalSettings := operation_setting.GetGeneralSetting()
 	pingEnabled := generalSettings.PingIntervalEnabled && !info.DisablePing
@@ -86,7 +110,7 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 	// 改进资源清理，确保所有 goroutine 正确退出
 	defer func() {
 		// 通知所有 goroutine 停止
-		common.SafeSendBool(stopChan, true)
+		signalStop()
 
 		ticker.Stop()
 		if pingTicker != nil {
@@ -106,7 +130,6 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 			logger.LogError(c, "timeout waiting for goroutines to exit")
 		}
 
-		close(stopChan)
 	}()
 
 	scanner.Buffer(make([]byte, InitialScannerBufferSize), getScannerBufferSize())
@@ -127,7 +150,7 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 				if r := recover(); r != nil {
 					logger.LogError(c, fmt.Sprintf("ping goroutine panic: %v", r))
 					info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonPanic, fmt.Errorf("ping panic: %v", r))
-					common.SafeSendBool(stopChan, true)
+					signalStop()
 				}
 				if common.DebugEnabled {
 					println("ping goroutine exited")
@@ -194,7 +217,7 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 				logger.LogError(c, fmt.Sprintf("data handler goroutine panic: %v", r))
 				info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonPanic, fmt.Errorf("handler panic: %v", r))
 			}
-			common.SafeSendBool(stopChan, true)
+			signalStop()
 		}()
 		sr := newStreamResult(info.StreamStatus)
 		for data := range dataChan {
@@ -218,7 +241,7 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 				logger.LogError(c, fmt.Sprintf("scanner goroutine panic: %v", r))
 				info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonPanic, fmt.Errorf("scanner panic: %v", r))
 			}
-			common.SafeSendBool(stopChan, true)
+			signalStop()
 			if common.DebugEnabled {
 				println("scanner goroutine exited")
 			}
@@ -283,7 +306,7 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 		}
 
 		if err := scanner.Err(); err != nil {
-			if err != io.EOF {
+			if !isExpectedStreamScannerError(err) {
 				logger.LogError(c, "scanner error: "+err.Error())
 				info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonScannerErr, err)
 			}
@@ -295,7 +318,9 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 	// 主循环等待完成或超时
 	select {
 	case <-ticker.C:
-		info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonTimeout, nil)
+		if info.StreamStatus.EndReason == relaycommon.StreamEndReasonNone {
+			info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonTimeout, nil)
+		}
 	case <-stopChan:
 		// EndReason already set by the goroutine that triggered stopChan
 	case <-c.Request.Context().Done():
